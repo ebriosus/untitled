@@ -30,7 +30,7 @@ How to build(Release x64):<br />
         4.3.6  yolo_cpp_dll.lib;LibOVR.lib;libOVRKernel.lib;ovrvision64.lib<br />
    4.4 Remove "Tracing" "Util" folders at ..\addons\ofxOculusRiftCV1\libs\LibOVRKernel\src  from your project<br />
    4.5 Modify in addon code:<br />
-       you need to inplace some addon files with files in the Modified floder (to get some modified function work)<br />
+       you should replace some addon files with files in the Modified floder (to get some modified function work)<br />
    Now the build should pass<br />
   
  
