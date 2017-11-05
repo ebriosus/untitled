@@ -32,6 +32,9 @@ How to build(Release x64):<br />
    4.5 Modify in addon code:<br />
        you should replace some addon files with files in the Modified floder (to get some modified function work)<br />
    Now the build should pass<br />
-  
+   <br />
+To run : <br />
+  Put ovrvison.dll OpenAl32.dll yolo_cpp_dll.dll under bin folder <br />
+  Put yolo weights file (coco version) under bin/data <br />
  
         
