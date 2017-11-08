@@ -50,6 +50,11 @@ bool ofxRealSense::open()
 		return false;
 	}
 
+	status = mSenseMgr->EnableHand();
+	if (status < PXC_STATUS_NO_ERROR) {
+		throw std::runtime_error("手の検出の有効化に失敗しました");
+	}
+
 	// init RGB stream, if desired
 	if (bColor)
 	{
@@ -82,14 +87,17 @@ bool ofxRealSense::open()
 		}
 	}
 
-	// init streams - this must be done before 3D scan config
+    // init streams - this must be done before 3D scan config
 	status = mSenseMgr->Init();
+
 	if (status < PXC_STATUS_NO_ERROR)
 	{
 		ofLogError("ofxRealSense") << "couldn't initialize Real Sense capture stream, error status: " << status;
 		close();
 		return false;
 	}
+
+	//initializeHandTracking();
 
 	// create coordinate mapper
 	mCoordinateMapper = mSenseMgr->QueryCaptureManager()->QueryDevice()->CreateProjection();
@@ -107,9 +115,10 @@ bool ofxRealSense::open()
 	// config 3D scanning
 	if (bScan) { bScan = mScanner.configure(); }
 
+	//1-7
+	//status = mSenseMgr->QueryCaptureManager()->QueryDevice()->SetDepthConfidenceThreshold(1);
+	//status = mSenseMgr->QueryCaptureManager()->QueryDevice()->SetIVCAMFilterOption(6);
 
-	status = mSenseMgr->QueryCaptureManager()->QueryDevice()->SetDepthConfidenceThreshold(1);
-	status = mSenseMgr->QueryCaptureManager()->QueryDevice()->SetIVCAMFilterOption(6);
 
 	/* to do: face tracker */
 
@@ -131,13 +140,14 @@ bool ofxRealSense::update()
 
 	// get new frame
 	/* TO DO: threading a la ofxKinect */
-	status = mSenseMgr->AcquireFrame(true,30); // this is blocking for 20ms, returns error if not all frames ready (e.g. depth + color + scan)
+	status = mSenseMgr->AcquireFrame(true , 30); // this is blocking for 20ms, returns error if not all frames ready (e.g. depth + color + scan)
 	if (status < PXC_STATUS_NO_ERROR)
 	{
 		ofLogWarning("ofxRealSense") << "unable to acquire new frame, error status: " << status;
 		return false;
 	}
 
+	//updateHandFrame();           
 
 	/* process images & algorithm modules data */
 
@@ -330,7 +340,81 @@ void ofxRealSense::drawScanPreview(float x, float y, float w, float h)
 	}
 }
 
+/*void ofxRealSense::GetCursorPoint(ofVec3f icursor[2]) {
+    
+	int numOfHands = cursorAnalysis->QueryNumberOfCursors();
+    for (int i = 0; i < numOfHands; i++)
+	{
+		//Get hand by time of appearance
+		PXCCursorData::ICursor* cursorData;
+		if (cursorAnalysis->QueryCursorData(PXCCursorData::AccessOrderType::ACCESS_ORDER_BY_TIME, i, cursorData) == PXC_STATUS_NO_ERROR)
+		{
+			// cursor point
+			PXCPoint3DF32 worldPoint = cursorData->QueryCursorImagePoint();
+			icursor[i].x = worldPoint.x;
+			icursor[i].y = worldPoint.y;
+			icursor[i].z = worldPoint.z;
+		}
+	}
+}*/
 
+
+void ofxRealSense::initializeHandTracking()
+{
+	// 手の検出器を取得する
+	handAnalyzer = mSenseMgr->QueryHand();
+	if (handAnalyzer == 0) {
+		throw std::runtime_error("手の検出器の取得に失敗しました");
+	}
+	// 手のデータを作成する
+	handData = handAnalyzer->CreateOutput();
+	if (handData == 0) {
+		throw std::runtime_error("手の検出器の作成に失敗しました");
+	}
+	PXCCapture::Device *device = mSenseMgr->QueryCaptureManager()->QueryDevice();
+	PXCCapture::DeviceInfo dinfo;
+	device->QueryDeviceInfo(&dinfo);
+	if (dinfo.model == PXCCapture::DEVICE_MODEL_IVCAM) {
+		device->SetDepthConfidenceThreshold(1);
+		//device->SetMirrorMode( PXCCapture::Device::MIRROR_MODE_DISABLED );
+		device->SetIVCAMFilterOption(6);
+	}
+	// 手の検出の設定
+	PXCHandConfiguration* config = handAnalyzer->CreateActiveConfiguration();
+	config->EnableSegmentationImage(true);
+	config->ApplyChanges();
+	config->Update();
+}
+
+void ofxRealSense::updateHandFrame() {
+
+	handData->Update();
+	// 検出した手の数を取得する
+	auto numOfHands = handData->QueryNumberOfHands();
+	handsnumber = numOfHands;
+	for (int i = 0; i < numOfHands; i++) {
+		// 手を取得する
+		pxcUID handID;
+		PXCHandData::IHand* hand;
+		auto sts = handData->QueryHandData(
+			PXCHandData::AccessOrderType::ACCESS_ORDER_BY_ID, i, hand);
+		if (sts < PXC_STATUS_NO_ERROR) {
+			continue;
+		}
+
+		//auto side = hand->QueryBodySide();
+		//auto openness = hand->QueryOpenness();
+		auto center = hand->QueryMassCenterImage();
+		
+
+		if (i < 2) {
+			//sides[i] = side;
+			//openesses[i] = openness;
+			centers[i].x = center.x;
+			centers[i].y = center.y;
+		}
+	}
+}
 //--------------------------------------------------------------
 bool ofxRealSense::close()
 {

@@ -7,7 +7,10 @@
 #endif
 
 #include "ofMain.h"
-#include "pxcsensemanager.h"	// main
+#include "pxcsensemanager.h"    // main
+#include "pxchandmodule.h"
+#include "pxchandconfiguration.h"
+#include "pxchanddata.h"
 #include "pxcprojection.h"		// coord mapper
 #include "pxcfacemodule.h"		// face tracker module
 #include "pxc3dscan.h"			// 3d scanner module
@@ -69,13 +72,22 @@ public:
     const ofPixels& getColorPixelsInDepthFrame() { return mColorInDepthFrame; }
 	const ofPixels& getDepthPixelsInColorFrame() { return mDepthInColorFrame; }
 	const ofShortPixels& getDepthRawPixelsInColorFrame() { return mDepthRawInColorFrame; }
+	
 
 	float getDistanceAt(int x, int y) {
 		return  getDepthRawPixelsInColorFrame()[y * 640 + x];
 	}
 	//const vector<uint16_t>& getDepthRawInColorFrameBuffer() { return mDepthRawInColorFrameBuffer; }
 
+	int handsnumber;
+	int sides[2];
+	float openesses[2];
+	ofPoint centers[2];
+
 private:
+	void  initializeHandTracking();
+	void  updateHandFrame();
+
 
 	bool updateDepth(PXCCapture::Sample* sample);
 	bool updateColor(PXCCapture::Sample* sample);
@@ -104,13 +116,18 @@ private:
 
 	vector<PXCPointF32> mUVDepthToColor; // [640 * 480]; // uv map depth -> color coords
 	vector<PXCPointF32> mUVColorToDepth; // [1920 * 1080]; // inverse uv map
+	
+    PXCPoint3DF32 m_cursorPoints[2] = {};
 
 	// RealSense SDK interface
 	PXCSenseManager *mSenseMgr;
 	PXCProjection *mCoordinateMapper;
+	PXCHandModule* handAnalyzer = 0;
+	PXCHandData* handData = 0;
 	PXCCapture::Sample *mCurrentSample;
-	
-	// face tracking module
+
+
+    // face tracking module
 	ofxRSFaceTracker mFaceTracker;
 
 	// 3d scanning module
