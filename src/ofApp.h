@@ -46,6 +46,7 @@ class ofApp : public ofBaseApp {
     
 	std::vector<bbox_t> lastResults;
     std::vector<posAndSize_> positionAndSizeOfObj_;
+	std::vector<ofPlanePrimitive> planes;
 
 	float probability;
 
@@ -58,6 +59,7 @@ class ofApp : public ofBaseApp {
 	ofParameter<float> yd_parameter;
 	ofParameter<float> ztexture;
 	ofParameter<float> gap;
+	ofParameter<float> gapy;
 	ofxPanel gui;
 	
 	ofImage obj[80];
@@ -84,16 +86,16 @@ public:
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 	
-	std::vector<posAndSize_> getPositionOfObj(const std::vector<bbox_t>& lastResults, float prob);
-	void drawNameAndBoxFromYolo(const std::vector<bbox_t>& lastResults, float prob);     //draw box on screen, the range of prob is from 0 to 1;
+	std::vector<posAndSize_> getPositionOfObj(float prob);
+	void drawNameAndBoxFromYolo(float prob);     //draw box on screen, the range of prob is from 0 to 1;
 	void billboarding(ofVec3f & position, axis_ & axis);
-	void drawplane(const std::vector<posAndSize_>& positionAndSizeOfObj_, const axis_ & axis);
+	void drawplane();
 	
 	void drawovrvisionsceneleft();
 	void drawovrvisionsceneright();
-	
-	
-	void drawrealsensescene(const axis_  axis);
+	void drawhands();
+	void drawrealsensescene();
+
 	
 	ofxRealSense realsense;
 	ofTexture colorInDepth, depthInColor;
@@ -109,5 +111,8 @@ public:
 	ofPoint tly1;
 	ofPoint brx1;
 	ofPoint bry1;
+
+	ofCamera cam;
+	ofNode Node;
 
 };
